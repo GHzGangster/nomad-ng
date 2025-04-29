@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 public class GameServerTest extends BaseGameControllerTest {
 	@Test
-	public void testEcho() {
+	public void echoTest() {
 		var activeResult = client.onChannelActive().join();
 		activeResult.ctx().writeAndFlush(TestUtil.toBuffer("00000001" + "aabbccdd"));
 		var readResult = client.onChannelRead().join();

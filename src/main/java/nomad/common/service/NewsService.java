@@ -1,8 +1,15 @@
 package nomad.common.service;
 
+import nomad.common.DbUtil;
 import nomad.common.message.GetNewsItemsMessage;
 import nomad.common.record.News;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.Update;
+import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
+
+import java.util.*;
+
+import static java.util.stream.Collectors.joining;
 
 public class NewsService {
 	private final Jdbi jdbi;
@@ -24,8 +31,15 @@ public class NewsService {
 
 	public void addNewsItem(News news) {
 		try (var handle = jdbi.open()) {
-			handle.createUpdate("insert into news (title, body) VALUES (:title, :body)")
-				.bind("title", news.getTitle()).bind("body", news.getBody()).execute();
+			var update = handle.createUpdate("insert into news (important, title, body<keys>) values (:important, :title, :body<values>)")
+				.bind("important", news.isImportant())
+				.bind("title", news.getTitle())
+				.bind("body", news.getBody());
+
+			DbUtil.addOptional(update, "time", news.getTime());
+
+			update.execute();
 		}
 	}
+
 }

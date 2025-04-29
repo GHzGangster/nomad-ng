@@ -6,6 +6,7 @@ import nomad.common.record.Lobby;
 import nomad.common.record.News;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.BeanMapper;
+import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
 
 public class Database {
 	public static Jdbi getJdbi() {
@@ -22,6 +23,8 @@ public class Database {
 		jdbi.registerRowMapper(BeanMapper.factory(Chara.class));
 		jdbi.registerRowMapper(BeanMapper.factory(Lobby.class));
 		jdbi.registerRowMapper(BeanMapper.factory(News.class));
+
+		jdbi.setTemplateEngine(new StringTemplateEngine());
 
 		return jdbi;
 	}

@@ -5,42 +5,26 @@ import nomad.Bytes;
 import nomad.BytesAssert;
 import nomad.TestUtil;
 import nomad.BaseGameControllerTest;
+import nomad.common.record.News;
+import nomad.migration.Migration;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 
 public class NewsGameControllerTest extends BaseGameControllerTest {
 	@Test
 	public void getNewsItemsTest1() {
-		try (var handle = jdbi.open()) {
-			handle.execute("""
-				DROP TABLE IF EXISTS public.news;
-    			
-				CREATE TABLE IF NOT EXISTS public.news
-				(
-					id bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
-					"time" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-					important boolean NOT NULL DEFAULT false,
-					title character varying(128) COLLATE pg_catalog."default" NOT NULL,
-					body character varying(886) COLLATE pg_catalog."default" NOT NULL,
-					CONSTRAINT news_pkey PRIMARY KEY (id)
-				)
-				    
-				TABLESPACE pg_default;
-				    
-				--ALTER TABLE IF EXISTS public.news
-				--    OWNER to postgres;
-			""");
+		Migration.runMigrations(jdbi);
 
-			;
+		var newsService = services.getNewsService();
 
-			handle.createUpdate("insert into news (time, important, title, body) VALUES (:time, :important, :title, :body)")
-				.bind("time", Instant.ofEpochSecond(1213228801))
-				.bind("important", true)
-				.bind("title", "Test")
-				.bind("body", "Hello, world!")
-				.execute();
-		}
+		var news = new News();
+		news.setTime(Instant.ofEpochSecond(1213228801).atOffset(ZoneOffset.UTC));
+		news.setImportant(true);
+		news.setTitle("Test");
+		news.setBody("Hello, world!");
+		newsService.addNewsItem(news);
 
 		var activeResult = client.onChannelActive().join();
 		activeResult.ctx().writeAndFlush(TestUtil.toBuffer("00002008"));
