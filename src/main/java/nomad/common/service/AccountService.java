@@ -1,7 +1,7 @@
 package nomad.common.service;
 
-import nomad.common.record.Account;
-import nomad.common.record.Chara;
+import nomad.common.model.Account;
+import nomad.common.model.Chara;
 import org.jdbi.v3.core.Jdbi;
 
 import java.util.List;

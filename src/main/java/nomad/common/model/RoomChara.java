@@ -1,4 +1,4 @@
-package nomad.common.record;
+package nomad.common.model;
 
 public class RoomChara {
 	private long id;

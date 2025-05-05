@@ -1,4 +1,4 @@
-package nomad.common.record;
+package nomad.common.model;
 
 public class Account {
 	private long id;

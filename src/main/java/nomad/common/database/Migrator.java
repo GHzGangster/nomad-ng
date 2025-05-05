@@ -1,10 +1,8 @@
-package nomad.migration;
+package nomad.common.database;
 
-import nomad.common.Database;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdbi.v3.core.Jdbi;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,38 +12,31 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Migration {
+public class Migrator {
+	private record MigrationInfo(long version, String name) {
+	}
+
 	private static final Logger logger = LogManager.getLogger();
 
-	private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15");
+	private final Jdbi jdbi;
 
-	public Migration() {
-		try (postgres) {
-			postgres.start();
-
-			var jdbi = Database.getJdbi(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
-			runMigrations(jdbi);
-		} finally {
-			postgres.stop();
-		}
+	public Migrator(Jdbi jdbi) {
+		this.jdbi = jdbi;
 	}
 
-	private record MigrationInfo (long version, String name) {
-	}
-
-	public static void runMigrations(Jdbi jdbi) {
+	public void run() {
 		var migrationDir = Paths.get("./migration/");
 		try {
 			var version = 0L;
 			try (var handle = jdbi.open()) {
 				handle.execute("""
-					CREATE TABLE IF NOT EXISTS public.migration
-					(
-						id bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
-						version bigint NOT NULL,
-						CONSTRAINT migration_pkey PRIMARY KEY (version)
-					)
-				""");
+						CREATE TABLE IF NOT EXISTS public.migration
+						(
+							id bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
+							version bigint NOT NULL,
+							CONSTRAINT migration_pkey PRIMARY KEY (version)
+						)
+					""");
 
 				version = handle.createQuery("select version from migration order by version desc limit 1")
 					.mapTo(Long.class)
@@ -77,7 +68,7 @@ public class Migration {
 				try (var handle = jdbi.open()) {
 					handle.createScript(sql).execute();
 
-					handle.createUpdate("insert into migration (version) values (:version);")
+					handle.createUpdate("insert into migration (version) values (:version)")
 						.bind("version", migration.version)
 						.execute();
 				}
@@ -91,11 +82,7 @@ public class Migration {
 			}
 			logger.info("Database updated to version " + version);
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			logger.error("Failed to run migration.", e);
 		}
-	}
-
-	public static void main(String[] args) {
-		new Migration();
 	}
 }

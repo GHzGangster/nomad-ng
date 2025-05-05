@@ -2,12 +2,8 @@ package nomad.common.service;
 
 import nomad.common.DbUtil;
 import nomad.common.message.GetNewsItemsMessage;
-import nomad.common.record.News;
+import nomad.common.model.News;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.statement.Update;
-import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
-
-import java.util.*;
 
 import static java.util.stream.Collectors.joining;
 

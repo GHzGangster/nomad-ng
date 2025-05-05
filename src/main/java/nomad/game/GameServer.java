@@ -6,6 +6,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import nomad.game.packet.GamePacketDecoder;
+import nomad.game.packet.GamePacketEncoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +41,10 @@ public class GameServer {
 
 		b.channel(NioServerSocketChannel.class);
 
-		b.childHandler(new GameServerChannelInitializer(controllers));
+		var packetDecoder = new GamePacketDecoder();
+		var packetEncoder = new GamePacketEncoder();
+		var serverHandler = new GameServerHandler(controllers);
+		b.childHandler(new GameServerChannelInitializer(packetDecoder, serverHandler, packetEncoder));
 
 		b.option(ChannelOption.SO_BACKLOG, 128);
 

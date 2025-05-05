@@ -1,7 +1,7 @@
 package nomad.web.controller;
 
 import io.jooby.Jooby;
-import nomad.common.record.News;
+import nomad.common.model.News;
 import nomad.common.service.NewsService;
 
 public class NewsWebController {

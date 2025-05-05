@@ -1,9 +1,6 @@
 package nomad.common;
 
-import nomad.common.record.Account;
-import nomad.common.record.Chara;
-import nomad.common.record.Lobby;
-import nomad.common.record.News;
+import nomad.common.model.*;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.BeanMapper;
 import org.jdbi.v3.stringtemplate4.StringTemplateEngine;
@@ -21,8 +18,13 @@ public class Database {
 
 		jdbi.registerRowMapper(BeanMapper.factory(Account.class));
 		jdbi.registerRowMapper(BeanMapper.factory(Chara.class));
+		jdbi.registerRowMapper(BeanMapper.factory(CharaRoomConfiguration.class));
+		jdbi.registerRowMapper(BeanMapper.factory(Clan.class));
 		jdbi.registerRowMapper(BeanMapper.factory(Lobby.class));
 		jdbi.registerRowMapper(BeanMapper.factory(News.class));
+		jdbi.registerRowMapper(BeanMapper.factory(Room.class));
+		jdbi.registerRowMapper(BeanMapper.factory(RoomChara.class));
+		jdbi.registerRowMapper(BeanMapper.factory(RoomConfiguration.class));
 
 		jdbi.setTemplateEngine(new StringTemplateEngine());
 

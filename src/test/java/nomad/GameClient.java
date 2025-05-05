@@ -1,12 +1,12 @@
 package nomad;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import nomad.game.packet.GamePacketDecoder;
+import nomad.game.packet.GamePacketEncoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,52 +14,38 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class GameClient {
-	public record ChannelActiveResult(ChannelHandlerContext ctx) {
-	}
-
-	public record ChannelReadResult(ChannelHandlerContext ctx, Object msg) {
-	}
-
 	private static final Logger logger = LogManager.getLogger();
 
 	private MultiThreadIoEventLoopGroup workerGroup;
 
-	private CompletableFuture<ChannelActiveResult> channelActiveFuture = new CompletableFuture<>();
-
-	private CompletableFuture<ChannelReadResult> channelReadFuture = new CompletableFuture<>();
-
-	private final Object channelEventsLock = new Object();
-
-	public CompletableFuture<Void> connect() {
+	public void run(long timeout, ChannelHandler clientHandler) {
 		workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
 		var bootstrap = new Bootstrap();
-
 		bootstrap.group(workerGroup);
-
 		bootstrap.channel(NioSocketChannel.class);
-
 		bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
 
-		bootstrap.handler(new ChannelInboundHandlerAdapter() {
+		var closeFuture = new CompletableFuture<Void>();
+		var closeHandler = new ChannelOutboundHandlerAdapter() {
 			@Override
-			public void channelActive(ChannelHandlerContext ctx) {
-				synchronized (channelEventsLock) {
-					channelActiveFuture.complete(new ChannelActiveResult(ctx));
-				}
+			public void close(ChannelHandlerContext ctx, ChannelPromise promise) {
+				closeFuture.complete(null);
 			}
+		};
 
+		var packetEncoder = new GamePacketEncoder();
+		var packetDecoder = new GamePacketDecoder();
+		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
-			public void channelRead(ChannelHandlerContext ctx, Object msg) {
-				synchronized (channelEventsLock) {
-					channelReadFuture.complete(new ChannelReadResult(ctx, msg));
-				}
+			public void initChannel(SocketChannel ch) {
+				ch.pipeline().addLast(closeHandler).addLast(packetEncoder).addLast(packetDecoder).addLast(clientHandler);
 			}
 		});
 
-		var future = new CompletableFuture<Void>();
-		bootstrap.connect("localhost", 5730).addListener(e -> future.complete(null));
-		return future;
+		bootstrap.connect("localhost", 5730); // .addListener(e -> future.complete(null))
+
+		closeFuture.orTimeout(timeout, TimeUnit.SECONDS).join();
 	}
 
 	public CompletableFuture<Void> disconnect() {
@@ -70,25 +56,5 @@ public class GameClient {
 		var future = new CompletableFuture<Void>();
 		workerGroup.shutdownGracefully(quietPeriod, timeout, unit).addListener(e -> future.complete(null));
 		return future;
-	}
-
-	public CompletableFuture<ChannelActiveResult> onChannelActive() {
-		synchronized (channelEventsLock) {
-			var result = channelActiveFuture;
-			if (result.isDone()) {
-				channelActiveFuture = new CompletableFuture<>();
-			}
-			return result;
-		}
-	}
-
-	public CompletableFuture<ChannelReadResult> onChannelRead() {
-		synchronized (channelEventsLock) {
-			var result = channelReadFuture;
-			if (result.isDone()) {
-				channelReadFuture = new CompletableFuture<>();
-			}
-			return result;
-		}
 	}
 }

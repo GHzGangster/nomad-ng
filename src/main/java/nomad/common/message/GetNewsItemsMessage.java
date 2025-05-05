@@ -1,6 +1,6 @@
 package nomad.common.message;
 
-import nomad.common.record.News;
+import nomad.common.model.News;
 
 import java.util.List;
 

@@ -3,6 +3,7 @@ package nomad;
 import nomad.common.Database;
 import nomad.common.Services;
 import nomad.common.ServicesFactory;
+import nomad.common.database.Migrator;
 import nomad.game.GameServer;
 import nomad.game.GameServerFactory;
 import org.jdbi.v3.core.Jdbi;
@@ -40,13 +41,15 @@ public abstract class BaseGameControllerTest {
 	public void setup() {
 		jdbi = Database.getJdbi(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
 
+		var migrator = new Migrator(jdbi);
+		migrator.run();
+
 		services = ServicesFactory.createServices(jdbi);
 
 		server = GameServerFactory.createGameServer(services);
 		server.start().join();
 
 		client = new GameClient();
-		client.connect().join();
 	}
 
 	@AfterEach

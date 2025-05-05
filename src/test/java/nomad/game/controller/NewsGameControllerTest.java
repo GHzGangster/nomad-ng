@@ -1,38 +1,56 @@
 package nomad.game.controller;
 
-import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import nomad.BaseGameControllerTest;
 import nomad.Bytes;
 import nomad.BytesAssert;
-import nomad.TestUtil;
-import nomad.BaseGameControllerTest;
-import nomad.common.record.News;
-import nomad.migration.Migration;
+import nomad.common.model.News;
+import nomad.game.packet.GamePacket;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+
+import static org.assertj.core.api.Assertions.*;
 
 public class NewsGameControllerTest extends BaseGameControllerTest {
 	@Test
 	public void getNewsItemsTest1() {
-		Migration.runMigrations(jdbi);
-
-		var newsService = services.getNewsService();
-
 		var news = new News();
 		news.setTime(Instant.ofEpochSecond(1213228801).atOffset(ZoneOffset.UTC));
 		news.setImportant(true);
 		news.setTitle("Test");
 		news.setBody("Hello, world!");
-		newsService.addNewsItem(news);
+		services.getNewsService().addNewsItem(news);
 
-		var activeResult = client.onChannelActive().join();
-		activeResult.ctx().writeAndFlush(TestUtil.toBuffer("00002008"));
+		var packets = new ArrayList<GamePacket>();
+		client.run(1, new ChannelInboundHandlerAdapter() {
+			@Override
+			public void channelActive(ChannelHandlerContext ctx) {
+				ctx.writeAndFlush(new GamePacket(0x2008));
+			}
 
-		var readResult = client.onChannelRead().join();
-		var buffer = (ByteBuf) readResult.msg();
+			@Override
+			public void channelRead(ChannelHandlerContext ctx, Object msg) {
+				if (msg instanceof GamePacket packet) {
+					packets.add(packet);
+					if (packet.getCommand() == 0x200b) {
+						ctx.close();
+					}
+				}
+			}
+		});
 
-		BytesAssert.assertThat(Bytes.from(buffer)).isEqualTo(Bytes.from(new byte[] {
+		assertThat(packets).hasSize(3);
+		var packet0 = packets.get(0);
+		var packet1 = packets.get(1);
+		var packet2 = packets.get(2);
+		assertThat(packet0.getCommand()).isEqualTo(0x2009);
+		assertThat(packet1.getCommand()).isEqualTo(0x200a);
+		assertThat(packet2.getCommand()).isEqualTo(0x200b);
+		BytesAssert.assertThat(Bytes.from(packet1.getPayload())).isEqualTo(Bytes.from(new byte[] {
 			0x00, 0x00, 0x00, 0x01, 0x01, 0x48, 0x50, 0x67, 0x01, 0x54, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
