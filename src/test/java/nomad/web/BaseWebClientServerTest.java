@@ -1,11 +1,12 @@
-package nomad;
+package nomad.web;
 
+import io.jooby.Jooby;
+import io.jooby.Server;
 import nomad.common.Database;
 import nomad.common.Services;
 import nomad.common.ServicesFactory;
 import nomad.common.database.Migrator;
-import nomad.game.GameServer;
-import nomad.game.GameServerFactory;
+import okhttp3.OkHttpClient;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -13,17 +14,16 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+public abstract class BaseWebClientServerTest {
+	protected static final String HOST = "http://localhost:8080";
 
-public abstract class BaseGameControllerTest {
+	protected static final OkHttpClient client = new OkHttpClient();
+
 	protected Jdbi jdbi;
 
 	protected Services services;
 
-	protected GameServer server;
-
-	protected GameClient client;
+	protected Server server;
 
 	private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15");
 
@@ -46,16 +46,14 @@ public abstract class BaseGameControllerTest {
 
 		services = ServicesFactory.createServices(jdbi);
 
-		server = GameServerFactory.createGameServer(services);
-		server.start().join();
-
-		client = new GameClient();
+		var jooby = new Jooby();
+		var webServer = WebServerFactory.createWebServer(services);
+		webServer.use(jooby);
+		server = jooby.start();
 	}
 
 	@AfterEach
 	public void teardown() {
-		var clientDisconnectFuture = client.disconnect(0L, 0L, TimeUnit.SECONDS);
-		var serverStopFuture = server.stop(0L, 0L, TimeUnit.SECONDS);
-		CompletableFuture.allOf(clientDisconnectFuture, serverStopFuture).join();
+		server.stop();
 	}
 }

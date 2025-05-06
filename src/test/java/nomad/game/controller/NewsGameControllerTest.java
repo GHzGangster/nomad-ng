@@ -2,7 +2,7 @@ package nomad.game.controller;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import nomad.BaseGameControllerTest;
+import nomad.game.BaseGameClientServerTest;
 import nomad.Bytes;
 import nomad.BytesAssert;
 import nomad.common.model.News;
@@ -15,9 +15,9 @@ import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.*;
 
-public class NewsGameControllerTest extends BaseGameControllerTest {
+public class NewsGameControllerTest extends BaseGameClientServerTest {
 	@Test
-	public void getNewsItemsTest1() {
+	public void getNewsItems1() {
 		var news = new News();
 		news.setTime(Instant.ofEpochSecond(1213228801).atOffset(ZoneOffset.UTC));
 		news.setImportant(true);

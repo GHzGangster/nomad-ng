@@ -2,7 +2,6 @@ package nomad.game.controller;
 
 import io.netty.buffer.ByteBuf;
 import nomad.common.BufferUtil;
-import nomad.common.NomadAllocator;
 import nomad.common.service.NewsService;
 import nomad.game.GameControllerContext;
 import nomad.game.IGameController;
@@ -27,7 +26,7 @@ public class NewsGameController implements IGameController {
 
 	private void getNewsItems(GameControllerContext ctx) {
 		var message = newsService.getNewsItems();
-//		System.out.println(message);
+		System.out.println(message);
 
 		var buffers = new ArrayList<ByteBuf>();
 		for (var newsItem : message.getNewsItems()) {

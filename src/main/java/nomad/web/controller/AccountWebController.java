@@ -2,8 +2,9 @@ package nomad.web.controller;
 
 import io.jooby.Jooby;
 import nomad.common.service.AccountService;
+import nomad.web.IWebController;
 
-public class AccountWebController {
+public class AccountWebController implements IWebController {
 	private final AccountService accountService;
 
 	public AccountWebController(AccountService accountService) {

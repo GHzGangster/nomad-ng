@@ -1,7 +1,6 @@
 package nomad.game;
 
 import nomad.common.Database;
-import nomad.common.NomadAllocator;
 import nomad.common.Services;
 import nomad.common.ServicesFactory;
 import nomad.game.controller.EchoGameController;

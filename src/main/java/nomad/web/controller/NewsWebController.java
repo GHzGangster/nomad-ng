@@ -3,8 +3,9 @@ package nomad.web.controller;
 import io.jooby.Jooby;
 import nomad.common.model.News;
 import nomad.common.service.NewsService;
+import nomad.web.IWebController;
 
-public class NewsWebController {
+public class NewsWebController implements IWebController {
 	private final NewsService newsService;
 
 	public NewsWebController(NewsService newsService) {
@@ -14,6 +15,7 @@ public class NewsWebController {
 	public void use(Jooby jooby) {
 		jooby.get("/news", ctx -> {
 			var message = newsService.getNewsItems();
+
 			return message.toString();
 		});
 

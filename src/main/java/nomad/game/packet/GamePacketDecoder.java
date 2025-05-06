@@ -32,7 +32,7 @@ public class GamePacketDecoder extends ChannelInboundHandlerAdapter {
 			logger.warn("GamePacketDecoder.channelActive(): Did not expect decodeState to be set.");
 		}
 
-		var buffer = ctx.alloc().buffer(1047, 1047);
+		var buffer = ctx.alloc().buffer(GamePacketConstants.MAX_PACKET_SIZE, GamePacketConstants.MAX_PACKET_SIZE);
 		decodeStateAttribute.set(new DecodeState(buffer, 1));
 
 		ctx.fireChannelActive();
